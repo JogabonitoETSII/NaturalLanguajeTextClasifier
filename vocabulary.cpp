@@ -69,15 +69,14 @@ int Vocabulary::learning(string input, string output){
 		if (checkFileExist (input.c_str())) {
 		string currentLine;// cambie el vector de string words a atributo privado de clase
 		//por que lo necesitaremos para crear las partes de esta semana
-			
 			while (std::getline(file, currentLine)) {			
 				currentLine = currentLine.substr(6, currentLine.size() - 1);			
 				istringstream flux(currentLine);
-	    	string token;      
-	    	countLine++;
-	    	while (flux >> token) {
-	    		learnWords.push_back (token);	
-	    	}
+		    	string token;      
+		    	countLine++;
+		    	while (flux >> token) {
+		    		learnWords.push_back (token);	
+		    	}
 			}
 			
 		ofstream outFile (output.c_str());
@@ -109,16 +108,102 @@ int Vocabulary::learning(string input, string output){
 		}
 }
 
+void Vocabulary::classifyRelNoRelText(string text , string rel , string notRel){
+	words.empty();
+	Evaluator aux;
+	vector<Evaluator> evalRel;
+	std::vector<Evaluator> evalNotRel ;
+	string token="";
+	int trash;
+	float fluxProbability=0;
+	int fluxFrecuency=0;
+	if (checkFileExist (rel)) {
+		string currentLine;// cambie el vector de string words a atributo privado de clase
+		//por que lo necesitaremos para crear las partes de esta semana
+		int wordCounter = 0;
+		while (std::getline(file, currentLine)) {			
+			currentLine = currentLine.substr(8, currentLine.size() - 1);
+			istringstream flux(currentLine);
+			flux >> trash;
+			flux >> trash;
+			flux >> token;
+			flux >>fluxFrecuency;
+			flux >> fluxProbability;
+			aux.setProbability(fluxProbability);
+			aux.setWord(token);
+			evalRel.push_back(aux);
+		}
+	}
+	file.close();
+	if (checkFileExist (notRel)) {
+		string currentLine;// cambie el vector de string words a atributo privado de clase
+		//por que lo necesitaremos para crear las partes de esta semana
+		int wordCounter = 0;
+		while (std::getline(file, currentLine)) {			
+			currentLine = currentLine.substr(8, currentLine.size() - 1);
+			istringstream flux(currentLine);
+			flux >> trash;
+			flux >> trash;
+			flux >> token;
+			flux >>fluxFrecuency;
+			flux >> fluxProbability;
+			aux.setProbability(fluxProbability);
+			aux.setWord(token);
+			evalNotRel.push_back(aux);
+			
+		}
+	}
+	file.close();
+	if (checkFileExist (text)) {
+		ofstream outFile ("clasificasion.txt");
+		string currentLine;// cambie el vector de string words a atributo privado de clase
+		//por que lo necesitaremos para crear las partes de esta semana
+		float probabilityAcumulateForWord=0;
+		while (std::getline(file, currentLine)) {			
+			currentLine = currentLine.substr(6, currentLine.size() - 1);			
+			istringstream flux(currentLine);
+	    	string token;      
+	    	while (flux >> token) {
+	    		//Buscamos la probabilidad en los relevantes
+	    		 for (int i = 0;i < evalRel.size() ; i++ ){
+	    		 	if(evalRel[i].getWord().compare(token) == 0){
+	    		 		probabilityAcumulateForWord+=evalRel[i].getProbability();
+	    		 	}
+	    		 }
+	    		 // buscamos la probabilidad con los no relevantes
+	    		 for (int i = 0; i < evalNotRel.size(); i++){
+	    		 	if(evalNotRel[i].getWord().compare(token) == 0){
+	    		 		probabilityAcumulateForWord+=evalNotRel[i].getProbability();
+	    		 	}
+	    		 }
+	    	}
+	    	if(probabilityAcumulateForWord<=0){
+	    		 	outFile <<" NoRelevante: "<< currentLine <<endl;
+	    	}
+	    	else{
+	    		 	outFile <<"Relevante:"<< currentLine <<endl;
+	    	}
+	    	probabilityAcumulateForWord=0;
+		}
+		outFile.close();
+		file.close();
+	}
+	
+}
+
+
+
+
 float Vocabulary::countWordsAppear(vector<string> learnWords,int j){
 		float frec=0;
 		for(int i=0;i<learnWords.size();i++){
 			  	if(words[j].compare(learnWords[i])==0){
 			  		frec++;
 			  	}
-			  
 		}	  
-		
 		return frec;
 }
 
-Vocabulary::~Vocabulary() {}
+Vocabulary::~Vocabulary() {
+	words.empty();
+}
