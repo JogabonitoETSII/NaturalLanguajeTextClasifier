@@ -8,17 +8,24 @@ int Vocabulary::parseFile (string fileName) {
 		string currentLine;// cambie el vector de string words a atributo privado de clase
 		//por que lo necesitaremos para crear las partes de esta semana
 		int wordCounter = 0;
+	
 		while (std::getline(file, currentLine)) {			
 			currentLine = currentLine.substr(6, currentLine.size() - 1);			
 			istringstream flux(currentLine);
     	string token;      
     	while (flux >> token) {
-    		words.push_back (token);	
-    		wordCounter++;
+    		
+   
+    		if((!regex_match(token,textHastag_)) && (!regex_match(token,textLink_))&& (!regex_match(token,textSpecials))
+    			&& (!regex_match(token,textPerson)) 	&& (!regex_match(token,textSinbol)) && (!regex_match(token,textExclamation))
+    					&& (!regex_match(token,textAmpersan)) ){
+	    		words.push_back(token);
+	    		wordCounter++;
+    		}
     	}
-      sort( words.begin() , words.end() );// ordenamos alfabeticamente
-      words=dontWordRepeat();// quitamos las repetidas
     }
+    sort( words.begin() , words.end() );// ordenamos alfabeticamente
+    words=dontWordRepeat();// quitamos las repetidas
     ofstream outFile (OUT_FILE);
     
     outFile << WORD_NUMBER << words.size() << endl;//metemos los datos en el fichero
@@ -50,8 +57,8 @@ vector<string> Vocabulary::dontWordRepeat(){
 	int countWordEq=0;
 	DontWordRepeatAux.push_back(words[0]);
 	for(int i=0;i<words.size()-1;i++){
-			if(words[i].size()!=words[i + 1 ].size()){
-				DontWordRepeatAux.push_back(words[i+1]);
+			if((words[i].size()!=words[i + 1 ].size()) && (words[i].compare(0,words[i+1].size(),words[i+1]) != 0 )){
+ 				DontWordRepeatAux.push_back(words[i+1]);
 			}
 			else{
 					if( words[i].compare(words[i+1]) != 0 ){// si la cantidad de caracteres acertas es distinta de la primera palabra no es repetida
@@ -74,12 +81,17 @@ int Vocabulary::learning(string input, string output){
 				istringstream flux(currentLine);
 		    	string token;      
 		    	countLine++;
-		    	while (flux >> token) {
-		    		learnWords.push_back (token);	
+		    	while(flux>>token){
+		    			if((!regex_match(token,textHastag_)) && (!regex_match(token,textLink_))&& (!regex_match(token,textSpecials))
+    					&& (!regex_match(token,textPerson)) 	&& (!regex_match(token,textSinbol)) && (!regex_match(token,textExclamation))
+    					&& (!regex_match(token,textAmpersan)) ){
+	    					learnWords.push_back(token);
+    					}
 		    	}
 			}
 			
-		ofstream outFile (output.c_str());
+	ofstream outFile (output.c_str());
+	cout << learnWords.size()<<endl;
     outFile << "Documentos" << countLine << endl;//metemos los datos en el
     outFile << WORD_NUMBER << learnWords.size() << endl;//metemos los datos en el 
     float j=0;
@@ -89,17 +101,18 @@ int Vocabulary::learning(string input, string output){
     for (string word : words) {
   		frec_=countWordsAppear(learnWords,j);
     	if(frec_==0){
-    		prob=log(((frec_+1)/(words.size()+learnWords.size())));
+    		prob=log(((frec_+1)/(words.size()+learnWords.size()+1)));
 	      outFile << WORD << word << " " << frec_+1<< " " << prob <<endl;
     	}
     	else{
-    		prob=log(((frec_+1)/(words.size()+learnWords.size())));
+    		prob=log(((frec_+1)/(words.size()+learnWords.size()+1)));
         outFile << WORD << word << " " << frec_<< " " << prob <<endl;
     	}
       j++;
       prob=0;
       frec_=0;
     }
+    	file.close();
 		learnWords.empty();	
 			outFile.close();
 			return 0;
@@ -124,8 +137,6 @@ void Vocabulary::classifyRelNoRelText(string text , string rel , string notRel){
 		while (std::getline(file, currentLine)) {			
 			currentLine = currentLine.substr(8, currentLine.size() - 1);
 			istringstream flux(currentLine);
-			flux >> trash;
-			flux >> trash;
 			flux >> token;
 			flux >>fluxFrecuency;
 			flux >> fluxProbability;
@@ -142,8 +153,6 @@ void Vocabulary::classifyRelNoRelText(string text , string rel , string notRel){
 		while (std::getline(file, currentLine)) {			
 			currentLine = currentLine.substr(8, currentLine.size() - 1);
 			istringstream flux(currentLine);
-			flux >> trash;
-			flux >> trash;
 			flux >> token;
 			flux >>fluxFrecuency;
 			flux >> fluxProbability;
@@ -158,33 +167,49 @@ void Vocabulary::classifyRelNoRelText(string text , string rel , string notRel){
 		ofstream outFile ("clasificasion.txt");
 		string currentLine;// cambie el vector de string words a atributo privado de clase
 		//por que lo necesitaremos para crear las partes de esta semana
-		float probabilityAcumulateForWord=0;
+		float probabilityAcumulateForWordRelevant=0;
+		float probabilityAcumulateForWordNotRelevant=0;
+		int rel=0;
+		int norel=0;
+		float relevante=(4654/10806);
+		float norelevante=(6152/10808);
 		while (std::getline(file, currentLine)) {			
 			currentLine = currentLine.substr(6, currentLine.size() - 1);			
 			istringstream flux(currentLine);
-	    	string token;      
+	    	string token;    
+	    	probabilityAcumulateForWordNotRelevant=norelevante;
+	    	probabilityAcumulateForWordRelevant=relevante;
 	    	while (flux >> token) {
 	    		//Buscamos la probabilidad en los relevantes
 	    		 for (int i = 0;i < evalRel.size() ; i++ ){
 	    		 	if(evalRel[i].getWord().compare(token) == 0){
-	    		 		probabilityAcumulateForWord+=evalRel[i].getProbability();
+	    		 		probabilityAcumulateForWordRelevant+=evalRel[i].getProbability();
+	    		 	
 	    		 	}
 	    		 }
+	    		 	
 	    		 // buscamos la probabilidad con los no relevantes
 	    		 for (int i = 0; i < evalNotRel.size(); i++){
 	    		 	if(evalNotRel[i].getWord().compare(token) == 0){
-	    		 		probabilityAcumulateForWord+=evalNotRel[i].getProbability();
+	    		 		probabilityAcumulateForWordNotRelevant+=evalNotRel[i].getProbability();
+	    		 		
 	    		 	}
 	    		 }
+	    
 	    	}
-	    	if(probabilityAcumulateForWord<=0){
-	    		 	outFile <<" NoRelevante: "<< currentLine <<endl;
+	    	if(probabilityAcumulateForWordRelevant < probabilityAcumulateForWordNotRelevant){
+	    		norel++;
+	    		 	outFile <<"NoRelevante: "<< currentLine <<endl;
 	    	}
 	    	else{
+	    		rel++;
 	    		 	outFile <<"Relevante:"<< currentLine <<endl;
+	    		 	
 	    	}
-	    	probabilityAcumulateForWord=0;
+	    	probabilityAcumulateForWordRelevant=0;
+	    	probabilityAcumulateForWordNotRelevant=0;
 		}
+		cout << " Relevantes -> "<< rel << "   NoRelevantes ->  "<<  norel << endl;
 		outFile.close();
 		file.close();
 	}
@@ -203,6 +228,31 @@ float Vocabulary::countWordsAppear(vector<string> learnWords,int j){
 		}	  
 		return frec;
 }
+void Vocabulary::checkPorcentlyEfectivity(string fileName){
+	int count=0;
+	int countline=0;
+	float resultado=0;
+	if(checkFileExist("clasificasion.txt")){
+	string currentLine;
+		while(std::getline(file,currentLine)){
+			if((countline<4654) && (regex_match(currentLine,textRelevante))){
+				count++;
+			}
+			else if((countline>=4654) && (regex_match(currentLine,textNoRelevante))){
+				count++;
+			}
+			countline++;
+		}
+	
+		 resultado=count/(countline);
+		cout << "porcentaje de acierto -> "<< count <<"   "<< countline << "   " <<resultado<<endl;
+	}
+	ofstream f(fileName.c_str());
+	f << resultado*100<< endl;
+	f.close();
+	file.close();
+}
+
 
 Vocabulary::~Vocabulary() {
 	words.empty();

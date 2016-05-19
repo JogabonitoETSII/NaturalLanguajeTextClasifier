@@ -11,7 +11,7 @@
 #define WORD_NUMBER "Número de palabras:"
 #define WORD "Palabra:"
 #define OUT_FILE "vocabulario.txt"
-#define REGEX_WORD \w
+#define REGEX_DIGIT \\d
 using namespace std;
 
 
@@ -20,8 +20,19 @@ using namespace std;
 
 class Vocabulary {
 private:
-	regex textTag_ = regex ("(?:Texto:)(REGEX_WORD|\b|.)+");
-	regex spaceSeparator_ = regex (" ");
+	
+	regex textHastag_ = regex ("(.*)(#)(.+)");
+	regex textLink_ = regex ("(http://)(.+)");
+	regex textSpecials = regex ("(?)(.+)");
+	regex textPerson = regex ("(.*)(@)(.+)");
+	regex textSinbol = regex ("(.*)(?*)(\\.+)");
+	regex textExclamation= regex("(.*)(!+)(.*)");
+	regex textAmpersan= regex("(.*)(&+)(.*)");
+	regex textNoRelevante= regex("(NoRelevante)(.+)");
+	regex textRelevante= regex("(Relevante)(.+)");
+	//regex textCom= regex("(.*)(\"+)(.*)");
+	//regex e1 =regex("[0-9]+");
+	//regex eee = regex("^\\s*(\\w+)\\s*:\\s*(.*)");
 	vector <string> words;
 	ifstream file;
 public:
@@ -33,6 +44,7 @@ public:
 	float countWordsAppear(std::vector<string> learnWords,int j);
 	void classifyRelNoRelText(string Text,string rel,string notRel );
 	bool checkFileExist (string fileName);
+	void checkPorcentlyEfectivity(string fileName);
 	
 	private:
 	// clase evaluator para guardar los valores y evaluarlos echa por comodidad
@@ -66,7 +78,7 @@ public:
 	}
 	
 	
-};
+	};
 
 };
 
